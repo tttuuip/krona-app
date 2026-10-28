@@ -5,12 +5,13 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const app = express();
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
-const CRYPTO_TOKEN = '661486:AAVyVWBRXYg3ISuQVDHxZaIU0sOTUGURni4'; // Твой токен
+const CRYPTO_TOKEN = '661486:AAVyVWBRXYg3ISuQVDHxZaIU0sOTUGURni4'; 
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
 app.use(express.json());
 app.use(express.static('public'));
 
+// ФАЙЛОВАЯ БАЗА (пока не подключили норм базу)
 const DB_PATH = './db.json';
 function loadDB() {
   if (!fs.existsSync(DB_PATH)) return { users: {}, cards: {}, quests: {}, pool: { total: 0, lastDistributed: Date.now() } };
@@ -267,37 +268,22 @@ app.post('/api/buy-card', async (req, res) => {
   const card = db.cards[cardId];
   if (!card || db.users[uId].cards.includes(cardId)) return res.status(400).json({ error: 'error' });
   
-  const usdtPrice = (card.price / 90).toFixed(2); // Примерный курс
+  const usdtPrice = (card.price / 90).toFixed(2);
   
   try {
     const response = await fetch('https://pay.crypt.bot/api/createInvoice', {
       method: 'POST',
-      headers: {
-        'Crypto-Pay-API-Token': CRYPTO_TOKEN,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        asset: 'USDT',
-        amount: usdtPrice,
-        description: `Актив: ${card.name} (Доход: +${card.income} KRN/час)`,
-        payload: JSON.stringify({ userId: uId, cardId: cardId })
-      })
+      headers: { 'Crypto-Pay-API-Token': CRYPTO_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asset: 'USDT', amount: usdtPrice, description: `Актив: ${card.name}`, payload: JSON.stringify({ userId: uId, cardId: cardId }) })
     });
     const data = await response.json();
-    
-    if (data.ok) {
-      res.json({ invoiceUrl: data.result.bot_invoice_url });
-    } else {
-      res.status(500).json({ error: 'Ошибка создания счёта' });
-    }
-  } catch (e) { 
-    console.error('ОШИБКА ОПЛАТЫ:', e.message); 
-    res.status(500).json({ error: 'Ошибка создания счёта' }); 
-  }
+    if (data.ok) res.json({ invoiceUrl: data.result.bot_invoice_url });
+    else res.status(500).json({ error: 'Ошибка создания счёта' });
+  } catch (e) { res.status(500).json({ error: 'Ошибка создания счёта' }); }
 });
 
-// ОБРАБОТКА УСПЕШНОЙ ОПЛАТЫ ОТ CRYPTOBOT (Вебхук)
-app.post('/api/crypto-webhook', async (req, res) => {
+// ВЕБХУК ОТ CRYPTOBOT
+app.post('/api/crypto-webhook', (req, res) => {
   if (req.body.update_type === 'invoice_paid') {
     const payload = JSON.parse(req.body.payload.payload);
     const user = getUser(payload.userId);
@@ -314,15 +300,7 @@ app.post('/api/crypto-webhook', async (req, res) => {
 app.listen(process.env.PORT || 3000, async () => {
   console.log('KRONA running');
   try {
-    await bot.setChatMenuButton({
-      menu_button: {
-        type: 'web_app',
-        text: 'Открыть KRONA',
-        web_app: { url: 'https://krona-app.onrender.com' }
-      }
-    });
+    await bot.setChatMenuButton({ menu_button: { type: 'web_app', text: 'Открыть KRONA', web_app: { url: 'https://krona-app.onrender.com' } } });
     console.log('Menu button set automatically');
-  } catch (error) {
-    console.error('Error setting menu button:', error);
-  }
+  } catch (error) { console.error('Error setting menu button:', error); }
 });
