@@ -21,7 +21,7 @@ function saveDB(db) {
 const db = loadDB();
 if (!db.pool) db.pool = { total: 0, lastDistributed: Date.now() };
 
-db.cards = db.cards || {
+db.cards = {
   spark: { id: 'spark', name: 'Spark Node', price: 10, income: 0.2, color: '#ff7b00' },
   drop: { id: 'drop', name: 'Drop Node', price: 25, income: 0.5, color: '#00d2ff' },
   leaf: { id: 'leaf', name: 'Leaf Node', price: 50, income: 1.2, color: '#11998e' },
@@ -52,7 +52,7 @@ db.cards = db.cards || {
   kronos: { id: 'kronos', name: 'Kronos Node', price: 25000, income: 3500.0, color: '#f5d76e' }
 };
 
-db.quests = db.quests || {
+db.quests = {
   tap1000: { id: 'tap1000', name: 'Сделай 1000 кликов', reward: 500, type: 'taps', target: 1000 },
   tap5000: { id: 'tap5000', name: 'Сделай 5000 кликов', reward: 2500, type: 'taps', target: 5000 },
   buy3: { id: 'buy3', name: 'Инвестируй в 3 актива', reward: 1000, type: 'cards', target: 3 },
