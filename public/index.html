@@ -48,10 +48,19 @@
     .balance { font-size: 50px; font-weight: 900; color: var(--gold); font-variant-numeric: tabular-nums; text-shadow: 0 4px 30px rgba(245, 215, 110, 0.3); line-height: 1.1; }
     .balance small { font-size: 16px; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; }
     
-    .stats { display: flex; justify-content: center; gap: 12px; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
-    .stats span { background: var(--card-bg); border: 1px solid var(--card-border); padding: 6px 12px; border-radius: 20px; color: var(--text-main); font-weight: 600; backdrop-filter: blur(10px); }
+    .stats { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+    .stat-pill { 
+      display: flex; align-items: center; gap: 6px; 
+      background: rgba(255, 255, 255, 0.03); 
+      border: 1px solid rgba(255, 255, 255, 0.05); 
+      padding: 8px 12px; border-radius: 30px; 
+      font-size: 14px; color: #fff;
+      backdrop-filter: blur(10px);
+    }
+    .stat-pill span { font-size: 14px; }
+    .stat-pill b { color: var(--gold); font-weight: 800; font-size: 15px; }
+    .stat-pill small { color: var(--text-muted); font-size: 11px; margin-left: -2px; font-weight: 600; }
     
-    /* 3D Монета */
     .tap-container { display: flex; justify-content: center; margin: 30px 0; position: relative; perspective: 1000px; }
     .tap-btn {
       width: 220px; height: 220px; border-radius: 50%;
@@ -70,13 +79,11 @@
       box-shadow: 0 5px 15px rgba(0,0,0,0.9), inset 0 -5px 10px rgba(0,0,0,0.6), inset 0 5px 10px rgba(255,255,255,0.4), 0 0 30px rgba(245, 215, 110, 0.5);
     }
 
-    /* Вкладки (Биржа) */
     .tabs { display: flex; gap: 4px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 8px; border-bottom: 1px solid var(--card-border); }
     .tabs::-webkit-scrollbar { display: none; }
     .tab { flex: 1; min-width: 80px; padding: 12px 4px; text-align: center; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.3s; border-radius: 8px; }
     .tab.active { color: #000; background: linear-gradient(135deg, #fceabb, #f8b500); font-weight: 800; box-shadow: 0 4px 15px rgba(245, 215, 110, 0.3); }
 
-    /* Карточки */
     .card { 
       background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--card-border); border-radius: 16px; 
@@ -89,7 +96,6 @@
     .card-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
     .card-roi { font-size: 12px; color: var(--green); font-weight: 800; letter-spacing: 0.5px; background: rgba(74, 222, 128, 0.1); padding: 4px 8px; border-radius: 6px; display: inline-block; }
     
-    /* Кнопки */
     .btn { 
       background: rgba(255, 255, 255, 0.05); color: var(--gold); border: 1px solid rgba(245, 215, 110, 0.5); 
       padding: 12px 18px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 13px; 
@@ -129,9 +135,9 @@
     <div class="logo-text">KRONA</div>
     <div class="balance"><span id="balance">0</span> <small>KRN</small></div>
     <div class="stats">
-      <span>⚡ <span id="energy">1000</span>/<span id="maxEnergy">1000</span></span>
-      <span>📈 <span id="income">0</span>/час</span>
-      <span>👆 <span id="tapPower">1</span></span>
+      <div class="stat-pill"><span>⚡</span> <b id="energy">1000</b><small>/<span id="maxEnergy">1000</span></small></div>
+      <div class="stat-pill"><span>📈</span> <b id="income">0</b><small>KRN/ч</small></div>
+      <div class="stat-pill"><span>👆</span> <b id="tapPower">1</b><small>X</small></div>
     </div>
   </div>
 
@@ -425,7 +431,6 @@
       if (r.error) return alert('Недостаточно KRN!');
       state.user = r.user; render();
     }
-
     async function claimDaily() {
       const r = await api('/api/daily-bonus');
       if (r.error) return alert('Дивиденды уже получены сегодня!');
