@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KRONA — Asset Management</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; user-select: none; }
+    body { background: #050505; color: #e0e0e0; padding: 16px; min-height: 100vh; overflow-x: hidden; letter-spacing: 0.3px; }
+    .header { text-align: center; margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; }
+    .logo-coin { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #d4af37, #8a6d1c); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 900; color: #000; box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2); margin-bottom: 10px; border: 1px solid #f5d76e; }
+    .logo-text { font-size: 18px; font-weight: 800; letter-spacing: 8px; color: #fff; text-transform: uppercase; }
+    .balance { font-size: 42px; font-weight: 800; margin: 10px 0 4px; color: #f5d76e; font-variant-numeric: tabular-nums; }
+    .balance small { font-size: 14px; color: #888; font-weight: 500; }
+    .stats { display: flex; justify-content: center; gap: 24px; font-size: 12px; color: #888; }
+    .stats span { color: #ccc; font-weight: 600; }
+    .tap-container { display: flex; justify-content: center; margin: 20px 0; }
+    .tap-btn { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d4af37, #4a3a10); display: flex; align-items: center; justify-content: center; font-size: 80px; color: #000; font-weight: 900; cursor: pointer; box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 -6px 12px rgba(0,0,0,0.6), inset 0 6px 12px rgba(255,255,255,0.2); border: 2px solid #f5d76e; transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); }
+    .tap-btn:active { transform: scale(0.93); }
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; border-bottom: 1px solid #1f1f1f; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { flex: 1; min-width: 80px; padding: 12px 4px; text-align: center; color: #666; font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s; border-bottom: 2px solid transparent; }
+    .tab.active { color: #f5d76e; border-bottom: 2px solid #f5d76e; font-weight: 700; }
+    .card { background: #0d0d0d; border: 1px solid #1f1f1f; border-radius: 8px; padding: 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+    .card:hover { border-color: #333; }
+    .card-name { font-weight: 700; color: #eee; font-size: 15px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;}
+    .card-color-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .card-desc { font-size: 12px; color: #666; margin-bottom: 2px; }
+    .card-roi { font-size: 11px; color: #4ade80; font-weight: 600; letter-spacing: 0.5px; }
+    .btn { background: #1a1a1a; color: #f5d76e; border: 1px solid #f5d76e; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 12px; transition: 0.2s; letter-spacing: 0.5px; }
+    .btn:hover { background: #f5d76e; color: #000; }
+    .btn:disabled { opacity: 0.3; cursor: default; background: transparent; color: #666; border-color: #333; }
+    .hidden { display: none; }
+    .box { background: #0d0d0d; border: 1px solid #1f1f1f; border-radius: 8px; padding: 16px; margin-bottom: 12px; font-size: 13px; color: #aaa; line-height: 1.5; position: relative; }
+    .box b { color: #eee; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .stat-item { background: #0d0d0d; padding: 14px; border-radius: 8px; border: 1px solid #1f1f1f; }
+    .stat-val { font-size: 20px; font-weight: 800; color: #f5d76e; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+    .stat-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: #0d0d0d; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #333; }
+    .input { width: 100%; padding: 12px; background: #050505; border: 1px solid #333; color: #fff; border-radius: 6px; margin-bottom: 12px; font-size: 14px; transition: 0.2s; }
+    .input:focus { outline: none; border-color: #f5d76e; }
+    .modal h3 { color: #f5d76e; margin-bottom: 16px; font-weight: 600; font-size: 16px; }
+    .close-manifest { position: absolute; top: 10px; right: 12px; color: #666; cursor: pointer; font-size: 16px; transition: 0.2s; background: #1a1a1a; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid #333; }
+    .close-manifest:hover { color: #fff; border-color: #f5d76e; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo-coin">K</div>
+    <div class="logo-text">KRONA</div>
+    <div class="balance"><span id="balance">0</span> <small>KRN</small></div>
+    <div class="stats">
+      <span>⚡ <span id="energy">1000</span>/<span id="maxEnergy">1000</span></span>
+      <span>📈 <span id="income">0</span>/час</span>
+      <span>👆 <span id="tapPower">1</span></span>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('tap', event)">Mining</div>
+    <div class="tab" onclick="switchTab('cards', event)">Assets</div>
+    <div class="tab" onclick="switchTab('shop', event)">Upgrades</div>
+    <div class="tab" onclick="switchTab('quests', event)">Tasks</div>
+    <div class="tab" onclick="switchTab('profile', event)">Portfolio</div>
+    <div class="tab" onclick="switchTab('rating', event)">Rating</div>
+  </div>
+
+  <div id="tapView">
+    <div class="tap-container"><div class="tap-btn" id="tapBtn">K</div></div>
+    <div class="box" style="text-align:center; border-color: #222;">
+      <p style="font-weight:600; color:#eee; font-size:14px; margin-bottom:4px;">Ежедневный дивиденд</p>
+      <p style="font-size:12px; color:#666; margin-bottom:10px;" id="bonusDesc">Забери 500 KRN</p>
+      <button class="btn" onclick="claimDaily()" style="width:100%;">Получить</button>
+    </div>
+    <div class="box" style="text-align:center; border-color: #4ade80;">
+      <p style="font-weight:600; color:#4ade80; font-size:14px; margin-bottom:4px;">💎 Дивидендный пул</p>
+      <p style="font-size:12px; color:#666; margin-bottom:2px;">Общий пул: <span id="poolTotal" style="color:#eee;">0</span> KRN</p>
+      <p style="font-size:12px; color:#666; margin-bottom:10px;">Твоя доля: <span id="poolShare" style="color:#eee;">0</span> KRN</p>
+      <button class="btn" id="poolBtn" style="background: #4ade80; color: #000; border:none; width:100%;" onclick="claimPool()">Забрать дивиденды</button>
+    </div>
+    <div class="box" id="manifestBox">
+      <div class="close-manifest" onclick="closeManifest()">✕</div>
+      <p style="font-weight:600; color:#eee; margin-bottom:8px; font-size:14px;">Почему листинг будет позже?</p>
+      <p style="margin-bottom:8px;">Мы строим реальную экономику, а не pump-and-dump. Наша цель — создать фундамент из <b>тысяч активных инвесторов</b>.</p>
+      <p style="margin-bottom:8px;">Вывод средств и листинг токена <b>$KRN</b> состоятся только после аудита безопасности и формирования ликвидности.</p>
+      <p>Ваша задача сейчас — наращивать портфель активов. Ранние инвесторы получат приоритет при конвертации.</p>
+    </div>
+  </div>
+
+  <div id="cardsView" class="hidden"></div>
+  
+  <div id="shopView" class="hidden">
+    <div class="box">
+      <p style="font-weight:600; color:#eee; margin-bottom:12px; font-size:14px;">Инфраструктура добычи</p>
+      <div class="flex-between" style="border-bottom:1px solid #1f1f1f; padding-bottom:12px; margin-bottom:12px;">
+        <div><b style="color:#eee;">Эффективность майнинга</b><br><small style="color:#666;">+1 KRN к добыче</small></div>
+        <button class="btn" onclick="upgrade('tap')">Улучшить</button>
+      </div>
+      <div class="flex-between" style="border-bottom:1px solid #1f1f1f; padding-bottom:12px; margin-bottom:12px;">
+        <div><b style="color:#eee;">Вычислительная мощность</b><br><small style="color:#666;">+500 лимита энергии</small></div>
+        <button class="btn" onclick="upgrade('energy')">Улучшить</button>
+      </div>
+      <div class="flex-between">
+        <div><b style="color:#eee;">Глобальный буст</b><br><small style="color:#666;">+0.5x ко всему доходу</small></div>
+        <button class="btn" onclick="upgrade('mult')">Улучшить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="questsView" class="hidden"></div>
+
+  <div id="profileView" class="hidden">
+    <div class="box">
+      <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+        <img id="pAvatar" style="width: 64px; height: 64px; border-radius: 50%; background: #1a1a1a; object-fit: cover; border: 1px solid #333;" src="https://via.placeholder.com/64/1a1a1a/f5d76e?text=K">
+        <div>
+          <h2 id="pNickname" style="font-size: 18px; color: #fff; margin-bottom: 6px; font-weight: 600;">Инвестор</h2>
+          <span style="background: rgba(245, 215, 110, 0.1); color: #f5d76e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid rgba(245, 215, 110, 0.2);">Статус: <span id="pLevel">Новичок</span></span>
+          <div style="font-size: 11px; color: #666; margin-top: 6px;" id="pPhoneStatus">Не верифицирован</div>
+        </div>
+      </div>
+      <button class="btn" style="margin-bottom: 8px; width: 100%;" onclick="openProfileEdit()">Настройки профиля</button>
+      <button class="btn" id="verifyBtn" style="margin-bottom: 8px; width: 100%; background: #11998e; color: #fff; border: none;" onclick="openVerify()">KYC Верификация</button>
+      <button class="btn" style="width: 100%; background: transparent; border: 1px solid #333; color: #666;" onclick="openManifestModal()">📄 Манифест проекта</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-val" id="pRefs">0</div><div class="stat-label">Партнёров (буст)</div></div>
+      <div class="stat-item"><div class="stat-val" id="pCardsCount">0</div><div class="stat-label">Активов в портфеле</div></div>
+      <div class="stat-item"><div class="stat-val" id="pCardIncome">0</div><div class="stat-label">Пассивный доход</div></div>
+      <div class="stat-item"><div class="stat-val" id="pTapPower">1</div><div class="stat-label">Эфф. майнинга</div></div>
+    </div>
+
+    <div class="box" style="margin-top:12px;">
+      <p style="font-size:12px; color:#666; margin-bottom:8px;">Партнёрская ссылка:</p>
+      <div style="background:#050505; padding:10px; border-radius:6px; font-size:12px; word-break:break-all; border:1px solid #1f1f1f; margin-bottom:10px; color:#aaa;" id="pRefLink"></div>
+      <button class="btn" style="width:100%;" onclick="shareRef()">Пригласить</button>
+    </div>
+  </div>
+
+  <div id="ratingView" class="hidden">
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button id="btnGlobal" class="btn" style="background:#f5d76e; color:#000; flex:1; border:none;" onclick="loadRating('global')">🌎 Топ инвесторов</button>
+        <button id="btnFriends" class="btn" style="background:transparent; color:#f5d76e; border:1px solid #f5d76e; flex:1;" onclick="loadRating('friends')">👥 Среди друзей</button>
+    </div>
+    <div class="box" style="text-align:center; border-color:#f5d76e;">
+        <p style="font-size:12px; color:#666; margin-bottom:5px;">Твой капитал</p>
+        <p style="font-size:28px; font-weight:900; color:#f5d76e;"><span id="myRatingBalance">0</span> KRN</p>
+        <p style="font-size:12px; color:#666; margin-top:5px;">Место: #<span id="myRatingPlace" style="color:#eee;">-</span></p>
+    </div>
+    <div class="box" id="ratingList"></div>
+  </div>
+
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <h3>Настройки профиля</h3>
+      <input type="text" id="editNickname" class="input" placeholder="Имя" maxlength="20">
+      <input type="url" id="editAvatar" class="input" placeholder="Ссылка на аватарку">
+      <div style="display:flex; gap:10px;">
+        <button class="btn" style="background:transparent; color:#666; border-color:#333; flex:1;" onclick="closeModal('editModal')">Отмена</button>
+        <button class="btn" style="flex:1;" onclick="saveProfile()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="verifyModal">
+    <div class="modal-content">
+      <h3>KYC Верификация</h3>
+      <p style="font-size:12px; color:#666; margin-bottom:16px;">Введи Email и номер телефона. Бот пришлет код в Telegram.</p>
+      <input type="email" id="verifyEmail" class="input" placeholder="Email (example@mail.com)">
+      <input type="tel" id="verifyPhone" class="input" placeholder="+7 999 000 00 00">
+      <input type="text" id="verifyCode" class="input hidden" placeholder="Код из сообщения">
+      <div style="display:flex; gap:10px;">
+        <button class="btn" style="background:transparent; color:#666; border-color:#333; flex:1;" onclick="closeModal('verifyModal')">Отмена</button>
+        <button class="btn" id="verifyActionBtn" style="flex:1;" onclick="handleVerify()">Получить код</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="manifestModal">
+    <div class="modal-content" style="border-color:#f5d76e;">
+      <h3>Манифест KRONA</h3>
+      <p style="font-size:13px; color:#aaa; margin-bottom:12px; line-height:1.6;">Мы строим реальную экономику, а не pump-and-dump. Наша цель — создать фундамент из <b>тысяч активных инвесторов</b>.</p>
+      <p style="font-size:13px; color:#aaa; margin-bottom:12px; line-height:1.6;">Вывод средств и листинг токена <b>$KRN</b> состоятся только после аудита безопасности и формирования ликвидности.</p>
+      <p style="font-size:13px; color:#aaa; margin-bottom:20px; line-height:1.6;">Ваша задача сейчас — наращивать портфель активов. Ранние инвесторы получат приоритет при конвертации.</p>
+      <button class="btn" style="width:100%;" onclick="closeModal('manifestModal')">Понятно</button>
+    </div>
+  </div>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready(); tg.expand();
+    const initData = tg.initData;
+    const startParam = tg.initDataUnsafe?.start_param || null;
+    let state = { user: null, cards: {}, quests: {} };
+
+    async function api(path, body = {}) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData, startParam, ...body }) });
+      return res.json();
+    }
+
+    function getRankName(level) {
+      if (level >= 15) return 'Легенда';
+      if (level >= 10) return 'Платина';
+      if (level >= 5) return 'Золото';
+      if (level >= 3) return 'Серебро';
+      return 'Новичок';
+    }
+
+    function checkManifest() {
+      if (localStorage.getItem('krona_manifest_hidden') === 'true') document.getElementById('manifestBox').classList.add('hidden');
+    }
+    function closeManifest() {
+      document.getElementById('manifestBox').classList.add('hidden');
+      localStorage.setItem('krona_manifest_hidden', 'true');
+    }
+    function openManifestModal() { document.getElementById('manifestModal').style.display = 'flex'; }
+
+    function render() {
+      const u = state.user;
+      if (!u) return;
+      document.getElementById('balance').textContent = Math.floor(u.balance);
+      document.getElementById('energy').textContent = u.energy;
+      document.getElementById('maxEnergy').textContent = u.maxEnergy;
+      document.getElementById('tapPower').textContent = u.tapPower;
+      document.getElementById('income').textContent = (u.cards.reduce((s, c) => s + state.cards[c].income, 0) * u.mult).toFixed(1);
+      document.getElementById('bonusDesc').textContent = u.lastBonus ? `Стрик: ${u.streak} дней` : 'Забери 500 KRN';
+
+      document.getElementById('pNickname').textContent = u.nickname;
+      document.getElementById('pLevel').textContent = getRankName(u.level) + ' (lvl ' + u.level + ')';
+      document.getElementById('pAvatar').src = u.avatar || 'https://via.placeholder.com/64/1a1a1a/f5d76e?text=' + (u.nickname ? u.nickname[0].toUpperCase() : 'K');
+      document.getElementById('pPhoneStatus').textContent = u.isVerified ? '✅ KYC Пройден: ' + u.email + ' / ' + u.phone : 'Не верифицирован';
+      document.getElementById('verifyBtn').style.display = u.isVerified ? 'none' : 'block';
+      document.getElementById('pRefLink').textContent = `https://t.me/kronacoin_bot?startapp=${u.id}`;
+      document.getElementById('pRefs').textContent = u.refCount + ' (+' + (u.refCount * 2) + '%)';
+      document.getElementById('pCardsCount').textContent = u.cards.length;
+      
+      const friendBoost = Math.min(u.refCount * 0.02, 1.0);
+      const cardIncome = u.cards.reduce((s, c) => s + state.cards[c].income, 0) * u.mult * (1 + friendBoost);
+      document.getElementById('pCardIncome').textContent = cardIncome.toFixed(1);
+      document.getElementById('pTapPower').textContent = u.tapPower;
+
+      updateButtonDesign();
+      renderCards();
+      renderQuests();
+    }
+
+    function updateButtonDesign() {
+      const btn = document.getElementById('tapBtn');
+      const u = state.user;
+      if (u.cards.length === 0) {
+        btn.style.background = 'radial-gradient(circle at 35% 35%, #d4af37, #4a3a10)';
+        btn.style.boxShadow = '0 10px 40px rgba(0,0,0,0.8), inset 0 -6px 12px rgba(0,0,0,0.6), inset 0 6px 12px rgba(255,255,255,0.2)';
+        btn.style.borderColor = '#f5d76e';
+        return;
+      }
+      let bestCard = null;
+      u.cards.forEach(cid => {
+        const card = state.cards[cid];
+        if (!bestCard || card.price > bestCard.price) bestCard = card;
+      });
+      if (bestCard) {
+        btn.style.background = `radial-gradient(circle at 35% 35%, ${bestCard.color}, #000000)`;
+        btn.style.boxShadow = `0 10px 40px rgba(0,0,0,0.8), inset 0 -6px 12px rgba(0,0,0,0.6), inset 0 6px 12px rgba(255,255,255,0.2)`;
+        btn.style.borderColor = bestCard.color;
+      }
+    }
+
+    function renderCards() {
+      const c = document.getElementById('cardsView'); c.innerHTML = '';
+      Object.values(state.cards).forEach(card => {
+        const owned = state.user.cards.includes(card.id);
+        const roiDays = Math.ceil(card.price / (card.income * 24));
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `<div>
+            <div class="card-name"><span class="card-color-dot" style="background:${card.color}"></span>${card.name}</div>
+            <div class="card-desc">Доход: +${card.income} KRN/час</div>
+            <div class="card-roi">Окупаемость: ~${roiDays} дней</div>
+          </div>
+          <button class="btn" ${owned ? 'disabled' : ''} onclick="buyCard('${card.id}')">${owned ? 'В портфеле' : card.price + ' ₽'}</button>`;
+        c.appendChild(div);
+      });
+    }
+
+    function renderQuests() {
+      const c = document.getElementById('questsView'); c.innerHTML = '';
+      Object.values(state.quests).forEach(q => {
+        const done = state.user.questsDone.includes(q.id);
+        let cur = 0;
+        if (q.type === 'taps') cur = state.user.totalTaps;
+        if (q.type === 'cards') cur = state.user.cards.length;
+        if (q.type === 'refs') cur = state.user.refCount;
+        const canClaim = cur >= q.target && !done;
+        
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `<div><div class="card-name">${q.name}</div>
+          <div class="card-desc">Награда: ${q.reward} KRN</div></div>
+          <button class="btn" ${done ? 'disabled' : (canClaim ? '' : 'disabled')} onclick="claimQuest('${q.id}')">
+          ${done ? 'Получено' : (canClaim ? 'Забрать' : cur + '/' + q.target)}</button>`;
+        c.appendChild(div);
+      });
+    }
+
+    async function buyCard(id) {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '...';
+      
+      const r = await api('/api/buy-card', { cardId: id });
+      
+      if (r.invoiceUrl) {
+        tg.openInvoice(r.invoiceUrl, (status) => {
+          if (status === 'paid') {
+            alert('Оплата прошла успешно! Актив добавлен в портфель.');
+            init();
+          } else {
+            btn.textContent = originalText;
+          }
+        });
+      } else {
+        alert(r.error || 'Ошибка');
+        btn.textContent = originalText;
+      }
+    }
+
+    let tapQueue = 0, tapTimer = null;
+    document.getElementById('tapBtn').addEventListener('click', () => {
+      tapQueue++;
+      document.getElementById('balance').textContent = Math.floor(state.user.balance) + tapQueue;
+      if (tapTimer) return;
+      tapTimer = setTimeout(async () => {
+        const taps = tapQueue; tapQueue = 0; tapTimer = null;
+        const r = await api('/api/tap', { taps });
+        if (r.user) { state.user = r.user; render(); }
+      }, 250);
+    });
+
+    async function upgrade(type) {
+      const r = await api('/api/upgrade', { type });
+      if (r.error) return alert('Недостаточно KRN!');
+      state.user = r.user; render();
+    }
+
+    async function claimDaily() {
+      const r = await api('/api/daily-bonus');
+      if (r.error) return alert('Дивиденды уже получены сегодня!');
+      state.user = r.user; render();
+      alert(`Дивиденды получены: +${r.reward} KRN!`);
+    }
+
+    async function claimPool() {
+      const r = await api('/api/claim-pool');
+      if (r.error) return alert('Дивиденды пула пока недоступны (нужно подождать 24 часа или пул пуст).');
+      state.user = r.user; render();
+      alert(`Дивиденды получены: +${r.reward} KRN!`);
+    }
+
+    async function claimQuest(id) {
+      const r = await api('/api/claim-quest', { questId: id });
+      if (r.error) return;
+      state.user = r.user; render();
+    }
+
+    function shareRef() {
+      const link = `https://t.me/kronacoin_bot?startapp=${state.user.id}`;
+      const text = `Залетай в KRONA. Инвестируй в цифровые активы и получай пассивный доход в KRN.`;
+      tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
+    }
+
+    async function loadRating(type) {
+      const btnG = document.getElementById('btnGlobal');
+      const btnF = document.getElementById('btnFriends');
+      if (type === 'global') {
+        btnG.style.background = '#f5d76e'; btnG.style.color = '#000'; btnG.style.border = 'none';
+        btnF.style.background = 'transparent'; btnF.style.color = '#f5d76e'; btnF.style.border = '1px solid #f5d76e';
+      } else {
+        btnG.style.background = 'transparent'; btnG.style.color = '#f5d76e'; btnG.style.border = '1px solid #f5d76e';
+        btnF.style.background = '#f5d76e'; btnF.style.color = '#000'; btnF.style.border = 'none';
+      }
+
+      const r = await api(`/api/leaderboard/${type}`);
+      const list = document.getElementById('ratingList');
+      
+      document.getElementById('myRatingPlace').textContent = r.myPlace || '?';
+      document.getElementById('myRatingBalance').textContent = r.myBalance;
+
+      list.innerHTML = '';
+      if (r.top.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:#666; font-size:12px;">Пока пусто</p>';
+        return;
+      }
+
+      r.top.forEach((u) => {
+        const div = document.createElement('div');
+        div.style.padding = '12px 0'; div.style.borderBottom = '1px solid #1f1f1f';
+        div.style.display = 'flex'; div.style.justifyContent = 'space-between'; div.style.alignItems = 'center';
+        if (u.isMe) { div.style.background = 'rgba(245, 215, 110, 0.05)'; div.style.padding = '12px 8px'; div.style.borderRadius = '6px'; }
+
+        let placeStr = `#${u.place}`;
+        if (u.place === 1) placeStr = '🥇 1';
+        if (u.place === 2) placeStr = '🥈 2';
+        if (u.place === 3) placeStr = '🥉 3';
+
+        div.innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-weight:700; width:35px; color:#f5d76e; font-size:13px;">${placeStr}</span>
+            <img src="${u.avatar || 'https://via.placeholder.com/30/1a1a1a/f5d76e?text=' + (u.name ? u.name[0] : 'U')}" style="width:30px; height:30px; border-radius:50%; object-fit:cover; border:1px solid #333;">
+            <span style="font-size:13px; color:#eee; font-weight:${u.isMe ? '700' : '400'};">${u.name} ${u.isMe ? '(Ты)' : ''}</span>
+          </div>
+          <span style="font-size:13px; color:#f5d76e; font-weight:600;">${u.balance} KRN</span>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function openProfileEdit() {
+      document.getElementById('editNickname').value = state.user.nickname;
+      document.getElementById('editAvatar').value = state.user.avatar || '';
+      document.getElementById('editModal').style.display = 'flex';
+    }
+
+    async function saveProfile() {
+      const nickname = document.getElementById('editNickname').value;
+      const avatar = document.getElementById('editAvatar').value;
+      const r = await api('/api/profile/update', { nickname, avatar });
+      if (r.user) {
+        state.user = r.user;
+        render();
+        closeModal('editModal');
+      }
+    }
+
+    let verifyStep = 1;
+    function openVerify() {
+      verifyStep = 1;
+      document.getElementById('verifyEmail').classList.remove('hidden');
+      document.getElementById('verifyPhone').classList.remove('hidden');
+      document.getElementById('verifyCode').classList.add('hidden');
+      document.getElementById('verifyActionBtn').textContent = 'Получить код';
+      document.getElementById('verifyModal').style.display = 'flex';
+    }
+
+    async function handleVerify() {
+      if (verifyStep === 1) {
+        const email = document.getElementById('verifyEmail').value;
+        const phone = document.getElementById('verifyPhone').value;
+        if (!email || !phone) return alert('Заполни Email и телефон');
+        const btn = document.getElementById('verifyActionBtn');
+        btn.textContent = 'Отправка...';
+        const r = await api('/api/profile/verify-request', { email, phone });
+        if (r.success) {
+          verifyStep = 2;
+          document.getElementById('verifyEmail').classList.add('hidden');
+          document.getElementById('verifyPhone').classList.add('hidden');
+          document.getElementById('verifyCode').classList.remove('hidden');
+          btn.textContent = 'Подтвердить';
+        } else {
+          alert(r.error || 'Ошибка');
+          btn.textContent = 'Получить код';
+        }
+      } else {
+        const code = document.getElementById('verifyCode').value;
+        if (!code) return alert('Введи код');
+        const r = await api('/api/profile/verify-confirm', { code });
+        if (r.success) {
+          state.user = r.user;
+          render();
+          closeModal('verifyModal');
+          alert('KYC успешно пройден!');
+        } else {
+          alert(r.error || 'Неверный код');
+        }
+      }
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function switchTab(tab, e) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+      ['tap','cards','shop','profile','quests','ref','rating'].forEach(v => {
+        const el = document.getElementById(v+'View');
+        if (el) el.classList.add('hidden');
+      });
+      document.getElementById(tab+'View').classList.remove('hidden');
+      if (tab === 'rating') loadRating('global');
+    }
+
+    async function init() {
+      const r = await api('/api/init');
+      if (r.error) return console.error(r.error);
+      state.user = r.user; 
+      state.cards = r.cards; 
+      state.quests = r.quests;
+      await api('/api/income');
+      checkManifest();
+      render();
+    }
+
+    init();
+    setInterval(init, 30000);
+  </script>
+</body>
+</html>
