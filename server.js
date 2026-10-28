@@ -264,15 +264,23 @@ app.post('/api/buy-card', async (req, res) => {
   const uId = parseUser(initData).id;
   const card = db.cards[cardId];
   if (!card || db.users[uId].cards.includes(cardId)) return res.status(400).json({ error: 'error' });
+  
   const starsPrice = Math.round(card.price / 1.3);
+  
   try {
     const invoice = await bot.createInvoiceLink({
-      title: `Актив: ${card.name}`, description: `Доход: +${card.income} KRN/час.`,
-      payload: JSON.stringify({ userId: uId, cardId }), provider_token: '', currency: 'XTR',
+      title: `Актив: ${card.name}`, 
+      description: `Доход: +${card.income} KRN/час.`,
+      payload: JSON.stringify({ userId: uId, cardId }), 
+      provider_token: '', 
+      currency: 'XTR',
       prices: [{ label: card.name, amount: starsPrice }]
     });
     res.json({ invoiceUrl: invoice });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'Ошибка создания счёта' }); }
+  } catch (e) { 
+    console.error('ОШИБКА ОПЛАТЫ:', e.message); 
+    res.status(500).json({ error: 'Ошибка создания счёта' }); 
+  }
 });
 
 app.post('/webhook/stars', async (req, res) => {
@@ -296,9 +304,11 @@ app.post('/setup-webhook', (req, res) => {
   res.json({ ok: true });
 });
 
+// АВТОМАТИЧЕСКАЯ НАСТРОЙКА ПРИ ЗАПУСКЕ
 app.listen(process.env.PORT || 3000, async () => {
   console.log('KRONA running');
   try {
+    // Принудительно включаем оплату звездами и ставим кнопку меню
     await bot.setChatMenuButton({
       menu_button: {
         type: 'web_app',
