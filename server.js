@@ -265,7 +265,7 @@ app.post('/api/buy-card', async (req, res) => {
   const card = db.cards[cardId];
   if (!card || db.users[uId].cards.includes(cardId)) return res.status(400).json({ error: 'error' });
   
-  const starsPrice = Math.round(card.price / 1.3);
+  const starsPrice = Math.max(1, Math.round(card.price / 1.3));
   
   try {
     const invoice = await bot.createInvoiceLink({
@@ -307,7 +307,6 @@ app.post('/setup-webhook', (req, res) => {
 app.listen(process.env.PORT || 3000, async () => {
   console.log('KRONA running');
   try {
-    // Автоматически ставим кнопку меню
     await bot.setChatMenuButton({
       menu_button: {
         type: 'web_app',
