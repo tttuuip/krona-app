@@ -5,14 +5,12 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const app = express();
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
-const CRYPTO_TOKEN = '661490:AALCeXeOPWiZ3PFs135fXYaU3UMmgQh99rs
-'; 
+const CRYPTO_TOKEN = '661490:AALCeXeOPWiZ3PFs135fXYaU3UMmgQh99rs';
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
 app.use(express.json());
 app.use(express.static('public'));
 
-// ФАЙЛОВАЯ БАЗА (пока не подключили норм базу)
 const DB_PATH = './db.json';
 function loadDB() {
   if (!fs.existsSync(DB_PATH)) return { users: {}, cards: {}, quests: {}, pool: { total: 0, lastDistributed: Date.now() } };
@@ -280,7 +278,10 @@ app.post('/api/buy-card', async (req, res) => {
     const data = await response.json();
     if (data.ok) res.json({ invoiceUrl: data.result.bot_invoice_url });
     else res.status(500).json({ error: 'Ошибка создания счёта' });
-  } catch (e) { res.status(500).json({ error: 'Ошибка создания счёта' }); }
+  } catch (e) { 
+    console.error('ОШИБКА ОПЛАТЫ:', e.message); 
+    res.status(500).json({ error: 'Ошибка создания счёта' }); 
+  }
 });
 
 // ВЕБХУК ОТ CRYPTOBOT
