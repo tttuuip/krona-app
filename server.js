@@ -5,7 +5,8 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const app = express();
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
-const CRYPTO_TOKEN = '661486:AAVyVWBRXYg3ISuQVDHxZaIU0sOTUGURni4'; 
+const CRYPTO_TOKEN = '661490:AALCeXeOPWiZ3PFs135fXYaU3UMmgQh99rs
+'; 
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
 app.use(express.json());
