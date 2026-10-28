@@ -304,11 +304,10 @@ app.post('/setup-webhook', (req, res) => {
   res.json({ ok: true });
 });
 
-// АВТОМАТИЧЕСКАЯ НАСТРОЙКА ПРИ ЗАПУСКЕ
 app.listen(process.env.PORT || 3000, async () => {
   console.log('KRONA running');
   try {
-    // Принудительно включаем оплату звездами и ставим кнопку меню
+    // Автоматически ставим кнопку меню
     await bot.setChatMenuButton({
       menu_button: {
         type: 'web_app',
